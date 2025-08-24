@@ -1,81 +1,73 @@
 const express = require('express');
 const session = require('express-session');
-const axios = require('axios');
-const path = require('path');
-const fs = require('fs');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 const config = require('./config.json');
 
 const app = express();
-const PORT = config.server.port;
+const PORT = config.server.port || 3000;
 
-// Serve frontend static files
-app.use(express.static(path.join(__dirname, '../frontend')));
-
-// Express session
 app.use(session({
   secret: config.server.sessionSecret,
   resave: false,
-  saveUninitialized: true,
+  saveUninitialized: false
 }));
 
-// OAuth2 login redirect
+// Redirect user to Discord OAuth2
 app.get('/auth/discord', (req, res) => {
   const redirect = encodeURIComponent(config.discord.redirectUri);
-  const url = `https://discord.com/oauth2/authorize?client_id=${config.discord.clientId}&redirect_uri=${redirect}&response_type=code&scope=identify`;
-  res.redirect(url);
+  res.redirect(`https://discord.com/api/oauth2/authorize?client_id=${config.discord.clientId}&redirect_uri=${redirect}&response_type=code&scope=identify`);
 });
 
-// OAuth2 callback
+// Handle OAuth2 callback
 app.get('/auth/discord/callback', async (req, res) => {
   const code = req.query.code;
-  if (!code) return res.status(400).send('No code provided');
+  if (!code) return res.send("No code provided");
 
   try {
-    // Exchange code for access token
-    const tokenResp = await axios.post('https://discord.com/api/oauth2/token', new URLSearchParams({
-      client_id: config.discord.clientId,
-      client_secret: config.discord.clientSecret,
-      code,
-      grant_type: 'authorization_code',
-      redirect_uri: config.discord.redirectUri
-    }), {
+    const data = new URLSearchParams();
+    data.append('client_id', config.discord.clientId);
+    data.append('client_secret', config.discord.clientSecret);
+    data.append('grant_type', 'authorization_code');
+    data.append('code', code);
+    data.append('redirect_uri', config.discord.redirectUri);
+    data.append('scope', 'identify');
+
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      body: data,
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
-
-    const accessToken = tokenResp.data.access_token;
-
-    // Get user info
-    const userResp = await axios.get('https://discord.com/api/v10/users/@me', {
-      headers: { Authorization: `Bearer ${accessToken}` }
+    const tokenData = await tokenRes.json();
+    const userRes = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
     });
+    const userData = await userRes.json();
 
-    // Save user in session
-    req.session.user = userResp.data;
-    res.redirect('/'); // redirect to frontend homepage
+    req.session.user = {
+      username: userData.username,
+      discriminator: userData.discriminator,
+      id: userData.id,
+      avatarURL: `https://cdn.discordapp.com/avatars/${userData.id}/${userData.avatar}.png`
+    };
+    res.redirect('/');
   } catch (err) {
-    console.error(err.response?.data || err.message);
-    res.status(500).send('OAuth2 error');
+    console.error(err);
+    res.send('Error during Discord authentication');
   }
 });
 
-// Logout route
-app.get('/logout', (req, res) => {
-  req.session.destroy(() => res.redirect('/'));
-});
-
-// API endpoint for frontend to get user
+// Get logged-in user
 app.get('/auth/user', (req, res) => {
   if (req.session.user) {
-    const { username, discriminator, id, avatar } = req.session.user;
-    res.json({ loggedIn: true, username, discriminator, id, avatar });
+    res.json({ loggedIn: true, ...req.session.user });
   } else {
     res.json({ loggedIn: false });
   }
 });
 
-// Serve frontend index for any route (for SPA)
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/index.html'));
+// Logout
+app.get('/logout', (req, res) => {
+  req.session.destroy(() => res.redirect('/'));
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
