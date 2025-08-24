@@ -107,10 +107,12 @@ body{
       <a data-tab="roster"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 110-10 5 5 0 010 10zm-9 9a9 9 0 1118 0H3z"/></svg><span>Roster</span></a>
       <a data-tab="teams"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v4H3V6zm0 6h18v6H3v-6z"/></svg><span>Teams</span></a>
       <a data-tab="stats"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4v-2zM5 3h2v12H5V3zm6 4h2v8h-2V7zm6 6h2v2h-2v-2z"/></svg><span>Stats</span></a>
+      <a data-tab="discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span>Discord</span></a>
     </nav>
   </aside>
 
   <main class="main">
+    <!-- Home -->
     <section id="home" class="tab-section active">
       <header class="header">
         <h1>Welcome Back</h1>
@@ -130,11 +132,6 @@ body{
             <div class="muted" style="margin-bottom:14px">Add or remove players from your roster</div>
             <button class="btn"><span class="rowi">Add Player</span></button>
             <button class="btn secondary"><span class="rowi">Remove Player</span></button>
-
-            <!-- Discord OAuth2 login -->
-            <div class="discord-linker" id="discord-linker">
-              <button>Loading...</button>
-            </div>
           </div>
         </div>
 
@@ -172,19 +169,32 @@ body{
       </section>
     </section>
 
+    <!-- Roster -->
     <section id="roster" class="tab-section">
       <h1>Roster</h1>
       <p>Roster details will be displayed here.</p>
     </section>
 
+    <!-- Teams -->
     <section id="teams" class="tab-section">
       <h1>Teams</h1>
       <p>Team details will be displayed here.</p>
     </section>
 
+    <!-- Stats -->
     <section id="stats" class="tab-section">
       <h1>Stats</h1>
       <p>More in-depth statistics will be displayed here.</p>
+    </section>
+
+    <!-- Discord Tab -->
+    <section id="discord" class="tab-section">
+      <h1>Connect Discord</h1>
+      <div class="card" style="max-width:400px; margin-top:10px;">
+        <div class="discord-linker" id="discord-linker">
+          <button>Loading...</button>
+        </div>
+      </div>
     </section>
   </main>
 </div>
@@ -220,16 +230,13 @@ function loadStats(){
 // Placeholder for player offers
 function loadPlayerOffers(){
   const offers = document.getElementById('player-offers');
-  offers.innerHTML = `
-    <div class="offer"><span>Example Player</span><span class="badge">Pending</span></div>
-  `;
+  offers.innerHTML = `<div class="offer"><span>Example Player</span><span class="badge">Pending</span></div>`;
 }
 
-// Initialize placeholders
 loadStats();
 loadPlayerOffers();
 
-// Discord OAuth2 login integration
+// Discord OAuth2 login
 async function loadDiscordUser(){
   try{
     const res = await fetch('/auth/user');
