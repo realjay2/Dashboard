@@ -82,10 +82,6 @@ body{
 .v.bad{color:var(--danger)}
 
 .discord-linker{margin-top:20px}
-.discord-linker button{
-  width:100%; border:none; border-radius:10px; padding:12px; background:var(--primary); color:white; font-weight:700; cursor:pointer;
-}
-.discord-linker button:hover{background:var(--primary-2)}
 
 .tab-section{display:none}
 .tab-section.active{display:block}
@@ -241,7 +237,7 @@ function loadPlayerOffers(){
 loadStats();
 loadPlayerOffers();
 
-// Discord login
+// Discord login & display
 async function loadDiscordUser(){
   try{
     const res = await fetch(`${BACKEND_URL}/auth/user`, { credentials:'include' });
@@ -249,14 +245,25 @@ async function loadDiscordUser(){
     const linker = document.getElementById('discord-linker');
     linker.innerHTML = '';
     if(user.loggedIn){
-      linker.innerHTML = `<button>${user.username}#${user.discriminator} - Logout</button>`;
-      linker.querySelector('button').onclick = () => window.location.href = `${BACKEND_URL}/logout`;
+      // User is logged in
+      linker.innerHTML = `
+        <div style="display:flex; align-items:center; gap:14px;">
+          <img src="${user.avatarURL}" style="width:50px; height:50px; border-radius:50%;"/>
+          <div>
+            <div style="font-weight:700;">${user.username}#${user.discriminator}</div>
+            <button id="logout-btn" style="margin-top:8px; padding:8px 12px; border:none; border-radius:8px; background:var(--primary); color:white; cursor:pointer;">Logout</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('logout-btn').onclick = () => window.location.href = `${BACKEND_URL}/logout`;
     }else{
-      linker.innerHTML = `<button>Login with Discord</button>`;
+      // User not logged in
+      linker.innerHTML = `<button style="width:100%; padding:12px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:700; cursor:pointer;">Login with Discord</button>`;
       linker.querySelector('button').onclick = () => window.location.href = `${BACKEND_URL}/auth/discord`;
     }
   }catch(err){
     console.error(err);
+    document.getElementById('discord-linker').innerHTML = `<div style="color:red;">Failed to load Discord user</div>`;
   }
 }
 
