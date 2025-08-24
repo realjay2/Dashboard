@@ -82,8 +82,9 @@
     .v.bad{color:var(--danger)}
 
     .discord-linker{margin-top:20px}
-    .discord-linker input{width:100%; padding:12px 14px; border-radius:10px; border:none; outline:none; background:rgba(255,255,255,.05); color:var(--text); font-size:15px;}
-    .discord-linker button{margin-top:12px; width:100%; border:none; border-radius:10px; padding:12px; background:var(--primary); color:white; font-weight:700; cursor:pointer;}
+    .discord-linker button, .discord-linker a button{
+      width:100%; border:none; border-radius:10px; padding:12px; background:var(--primary); color:white; font-weight:700; cursor:pointer;
+    }
     .discord-linker button:hover{background:var(--primary-2)}
 
     .tab-section{display:none}
@@ -130,9 +131,10 @@
               <div class="muted" style="margin-bottom:14px">Add or remove players from your roster</div>
               <button class="btn"><span class="rowi"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5v14m-7-7h14" stroke="currentColor" stroke-width="2" fill="none"/></svg><span>Add Player</span></span></button>
               <button class="btn secondary"><span class="rowi"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M5 12h14" stroke="currentColor" stroke-width="2" fill="none"/></svg><span>Remove Player</span></span></button>
-              <div class="discord-linker">
-                <input type="text" placeholder="Enter Discord Username (e.g., User#1234)">
-                <button>Link Discord</button>
+
+              <!-- Discord OAuth2 login -->
+              <div class="discord-linker" id="discord-linker">
+                <button>Loading...</button>
               </div>
             </div>
           </div>
@@ -234,6 +236,30 @@
     // Initialize placeholders
     loadStats();
     loadPlayerOffers();
+
+    // Discord OAuth2 login check
+    async function checkUser() {
+      const div = document.getElementById('discord-linker');
+      try {
+        const res = await fetch('http://localhost:3000/api/me', { credentials: 'include' });
+        const data = await res.json();
+        if(res.ok){
+          div.innerHTML = `<div style="margin-bottom:8px;">Logged in as ${data.user.username}#${data.user.discriminator}</div>
+                           <button id="logout">Logout</button>`;
+          document.getElementById('logout').onclick = async () => {
+            await fetch('http://localhost:3000/logout', { credentials: 'include' });
+            location.reload();
+          };
+        } else {
+          div.innerHTML = `<a href="http://localhost:3000/login"><button>Login with Discord</button></a>`;
+        }
+      } catch(err) {
+        console.error(err);
+        div.innerHTML = `<a href="http://localhost:3000/login"><button>Login with Discord</button></a>`;
+      }
+    }
+
+    checkUser();
   </script>
 </body>
 </html>
