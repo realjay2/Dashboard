@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Hybrid Dash</title>
+<title>Dashboard</title>
 <link rel="icon" href="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" type="image/webp">
 <style>
 :root{
@@ -97,25 +97,29 @@ body{
 </head>
 <body>
 <script>
-const BACKEND_URL = 'https://backend-domain.com';
+// Configure your backend URL here:
+const BACKEND_URL = 'https://your-backend-domain.com'; // <-- REPLACE with your backend URL
 </script>
 
-<aside class="sidebar">
-  <div class="brand" style="display:flex; align-items:center; gap:10px;">
-    <img src="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" alt="Hybrid Logo" style="width:32px; height:32px;">
-    <span>Hybrid Dash</span>
-  </div>
-  <nav class="nav">
-    <a class="active" data-tab="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z"/></svg><span>Home</span></a>
-    <a data-tab="roster"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 110-10 5 5 0 010 10zm-9 9a9 9 0 1118 0H3z"/></svg><span>Roster</span></a>
-    <a data-tab="teams"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v4H3V6zm0 6h18v6H3v-6z"/></svg><span>Teams</span></a>
-    <a data-tab="stats"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4v-2zM5 3h2v12H5V3zm6 4h2v8h-2V7zm6 6h2v2h-2v-2z"/></svg><span>Stats</span></a>
-    <a data-tab="discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span>Discord</span></a>
-  </nav>
-</aside>
-
+<div class="app">
+  <aside class="sidebar">
+<div class="brand">
+  <img src="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" 
+       alt="Hybrid Logo" 
+       style="width:28px; height:28px; vertical-align:middle; margin-right:8px;"/>
+  Hybrid Dash
+</div>
+    <nav class="nav">
+      <a class="active" data-tab="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z"/></svg><span>Home</span></a>
+      <a data-tab="roster"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 110-10 5 5 0 010 10zm-9 9a9 9 0 1118 0H3z"/></svg><span>Roster</span></a>
+      <a data-tab="teams"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v4H3V6zm0 6h18v6H3v-6z"/></svg><span>Teams</span></a>
+      <a data-tab="stats"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4v-2zM5 3h2v12H5V3zm6 4h2v8h-2V7zm6 6h2v2h-2v-2z"/></svg><span>Stats</span></a>
+      <a data-tab="discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span>Discord</span></a>
+    </nav>
+  </aside>
 
   <main class="main">
+    <!-- Home -->
     <section id="home" class="tab-section active">
       <header class="header">
         <h1>Welcome Back</h1>
@@ -172,21 +176,25 @@ const BACKEND_URL = 'https://backend-domain.com';
       </section>
     </section>
 
+    <!-- Roster -->
     <section id="roster" class="tab-section">
       <h1>Roster</h1>
       <p>Roster details will be displayed here.</p>
     </section>
 
+    <!-- Teams -->
     <section id="teams" class="tab-section">
       <h1>Teams</h1>
       <p>Team details will be displayed here.</p>
     </section>
 
+    <!-- Stats -->
     <section id="stats" class="tab-section">
       <h1>Stats</h1>
       <p>More in-depth statistics will be displayed here.</p>
     </section>
 
+    <!-- Discord -->
     <section id="discord" class="tab-section">
       <h1>Connect Discord</h1>
       <div class="card" style="max-width:400px; margin-top:10px;">
@@ -199,6 +207,7 @@ const BACKEND_URL = 'https://backend-domain.com';
 </div>
 
 <script>
+// Sidebar tab switching
 const navLinks = document.querySelectorAll('.nav a');
 const tabs = document.querySelectorAll('.tab-section');
 navLinks.forEach(link => {
@@ -214,6 +223,7 @@ navLinks.forEach(link => {
   });
 });
 
+// Load stats
 function loadStats(){
   const stats = document.getElementById('live-stats');
   stats.innerHTML = `
@@ -224,6 +234,7 @@ function loadStats(){
   `;
 }
 
+// Load player offers
 function loadPlayerOffers(){
   const offers = document.getElementById('player-offers');
   offers.innerHTML = `<div class="offer"><span>Example Player</span><span class="badge">Pending</span></div>`;
@@ -232,6 +243,7 @@ function loadPlayerOffers(){
 loadStats();
 loadPlayerOffers();
 
+// Discord login & display
 async function loadDiscordUser(){
   try{
     const res = await fetch(`${BACKEND_URL}/auth/user`, { credentials:'include' });
@@ -239,6 +251,7 @@ async function loadDiscordUser(){
     const linker = document.getElementById('discord-linker');
     linker.innerHTML = '';
     if(user.loggedIn){
+      // User is logged in
       linker.innerHTML = `
         <div style="display:flex; align-items:center; gap:14px;">
           <img src="${user.avatarURL}" style="width:50px; height:50px; border-radius:50%;"/>
@@ -250,6 +263,7 @@ async function loadDiscordUser(){
       `;
       document.getElementById('logout-btn').onclick = () => window.location.href = `${BACKEND_URL}/logout`;
     }else{
+      // User not logged in
       linker.innerHTML = `<button style="width:100%; padding:12px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:700; cursor:pointer;">Login with Discord</button>`;
       linker.querySelector('button').onclick = () => window.location.href = `${BACKEND_URL}/auth/discord`;
     }
