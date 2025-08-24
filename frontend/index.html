@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; display: flex; }
+    .sidebar { width: 200px; background: #222; color: #fff; height: 100vh; padding: 20px; }
+    .sidebar button { display: block; margin: 10px 0; width: 100%; padding: 10px; background: #444; border: none; color: #fff; cursor: pointer; }
+    .content { flex: 1; padding: 20px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <button onclick="showTab('home')">Home</button>
+    <button onclick="showTab('roster')">Roster</button>
+    <button onclick="showTab('teams')">Teams</button>
+    <button onclick="showTab('stats')">Stats</button>
+  </div>
+  <div class="content">
+    <div id="home">Welcome to the dashboard.</div>
+    <div id="roster" class="hidden">Roster page</div>
+    <div id="teams" class="hidden">Teams page</div>
+    <div id="stats" class="hidden">
+      <h2>User Stats</h2>
+      <input type="text" id="discordId" placeholder="Discord ID">
+      <button onclick="linkDiscord()">Link Discord</button>
+      <pre id="statsOutput"></pre>
+    </div>
+  </div>
+
+  <script>
+    function showTab(tab) {
+      document.querySelectorAll('.content > div').forEach(d => d.classList.add('hidden'));
+      document.getElementById(tab).classList.remove('hidden');
+    }
+
+    async function linkDiscord() {
+      const discordId = document.getElementById('discordId').value;
+      if (!discordId) return alert("Enter a Discord ID");
+
+      // Mock linking
+      await fetch("http://localhost:3000/api/link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ discordId, username: "TestUser#0001" })
+      });
+
+      const res = await fetch("http://localhost:3000/api/stats/" + discordId);
+      const stats = await res.json();
+      document.getElementById('statsOutput').textContent = JSON.stringify(stats, null, 2);
+    }
+  </script>
+</body>
+</html>
