@@ -1,97 +1,85 @@
-const express = require("express");
-const fs = require("fs");
-const path = require("path");
-const bodyParser = require("body-parser");
-const session = require("express-session");
+const express = require('express');
+const session = require('express-session');
+const fetch = require('node-fetch');
+const fs = require('fs');
+const path = require('path');
 
-const config = require("./config.json");
-const PORT = config.server.port || 3000;
-const STORAGE_FILE = path.join(__dirname, "storage", "users.json");
-
-if (!fs.existsSync(path.dirname(STORAGE_FILE))) {
-  fs.mkdirSync(path.dirname(STORAGE_FILE), { recursive: true });
-}
-if (!fs.existsSync(STORAGE_FILE)) {
-  fs.writeFileSync(STORAGE_FILE, JSON.stringify({ users: {} }, null, 2));
-}
-
-function readStorage() {
-  return JSON.parse(fs.readFileSync(STORAGE_FILE, "utf8"));
-}
-function writeStorage(data) {
-  fs.writeFileSync(STORAGE_FILE, JSON.stringify(data, null, 2));
-}
+const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
 
 const app = express();
-app.use(bodyParser.json());
+const PORT = config.server.port || 3000;
+
+app.use(express.json());
 app.use(session({
   secret: config.server.sessionSecret,
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: false,
 }));
 
-app.post("/api/link", (req, res) => {
-  const { discordId, username, avatar } = req.body;
-  if (!discordId || !username) {
-    return res.status(400).json({ error: "Missing discordId or username" });
+// Enable CORS for frontend
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  next();
+});
+
+// Discord OAuth2 login
+app.get('/login', (req, res) => {
+  const params = new URLSearchParams({
+    client_id: config.discord.clientId,
+    redirect_uri: config.discord.redirectUri,
+    response_type: 'code',
+    scope: 'identify email',
+    prompt: 'consent'
+  });
+  res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
+});
+
+// OAuth2 callback
+app.get('/auth/discord/callback', async (req, res) => {
+  const code = req.query.code;
+  if (!code) return res.send('No code provided');
+
+  const data = new URLSearchParams({
+    client_id: config.discord.clientId,
+    client_secret: config.discord.clientSecret,
+    grant_type: 'authorization_code',
+    code,
+    redirect_uri: config.discord.redirectUri,
+  });
+
+  try {
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
+      method: 'POST',
+      body: data,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+    const tokenJson = await tokenRes.json();
+
+    const userRes = await fetch('https://discord.com/api/users/@me', {
+      headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+    });
+    const user = await userRes.json();
+
+    req.session.user = user;
+
+    // Redirect to frontend with session
+    res.redirect(`${config.discord.frontendUrl}?logged_in=true`);
+  } catch (err) {
+    console.error(err);
+    res.send('Error fetching Discord user');
   }
-  const storage = readStorage();
-  if (!storage.users[discordId]) {
-    storage.users[discordId] = {
-      username,
-      avatar: avatar || null,
-      stats: { games: 0, wins: 0, losses: 0 },
-      offers: []
-    };
-  } else {
-    storage.users[discordId].username = username;
-    storage.users[discordId].avatar = avatar || storage.users[discordId].avatar;
-  }
-  writeStorage(storage);
-  res.json({ success: true, user: storage.users[discordId] });
 });
 
-app.get("/api/stats/:discordId", (req, res) => {
-  const { discordId } = req.params;
-  const storage = readStorage();
-  const user = storage.users[discordId];
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user.stats);
+// API to get user info
+app.get('/api/me', (req, res) => {
+  if (req.session.user) return res.json({ user: req.session.user });
+  res.status(401).json({ error: 'Not logged in' });
 });
 
-app.post("/api/stats/:discordId", (req, res) => {
-  const { discordId } = req.params;
-  const { games, wins, losses } = req.body;
-  const storage = readStorage();
-  const user = storage.users[discordId];
-  if (!user) return res.status(404).json({ error: "User not found" });
-  if (games !== undefined) user.stats.games = games;
-  if (wins !== undefined) user.stats.wins = wins;
-  if (losses !== undefined) user.stats.losses = losses;
-  writeStorage(storage);
-  res.json({ success: true, stats: user.stats });
+// Logout
+app.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.json({ ok: true });
 });
 
-app.get("/api/offers/:discordId", (req, res) => {
-  const { discordId } = req.params;
-  const storage = readStorage();
-  const user = storage.users[discordId];
-  if (!user) return res.status(404).json({ error: "User not found" });
-  res.json(user.offers);
-});
-
-app.post("/api/offers/:discordId", (req, res) => {
-  const { discordId } = req.params;
-  const { status } = req.body;
-  const storage = readStorage();
-  const user = storage.users[discordId];
-  if (!user) return res.status(404).json({ error: "User not found" });
-  const newOffer = { id: Date.now(), status: status || "Pending" };
-  user.offers.push(newOffer);
-  writeStorage(storage);
-  res.json({ success: true, offers: user.offers });
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));
