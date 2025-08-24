@@ -82,7 +82,7 @@ body{
 .v.bad{color:var(--danger)}
 
 .discord-linker{margin-top:20px}
-.discord-linker button, .discord-linker a button{
+.discord-linker button{
   width:100%; border:none; border-radius:10px; padding:12px; background:var(--primary); color:white; font-weight:700; cursor:pointer;
 }
 .discord-linker button:hover{background:var(--primary-2)}
@@ -99,6 +99,11 @@ body{
 </style>
 </head>
 <body>
+<script>
+// Configure your backend URL here:
+const BACKEND_URL = 'https://your-backend-domain.com'; // <-- REPLACE with your backend URL
+</script>
+
 <div class="app">
   <aside class="sidebar">
     <div class="brand">DASHBOARD</div>
@@ -139,18 +144,18 @@ body{
           <div class="card">
             <h3>Activity</h3>
             <div class="bullets">
-              <div><span class="dot"></span><span class="skeleton med" style="display:inline-block; width:55%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="display:inline-block; width:68%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="display:inline-block; width:40%"></span></div>
+              <div><span class="dot"></span><span class="skeleton med" style="width:55%"></span></div>
+              <div><span class="dot"></span><span class="skeleton med" style="width:68%"></span></div>
+              <div><span class="dot"></span><span class="skeleton med" style="width:40%"></span></div>
             </div>
           </div>
 
           <div class="card">
             <h3>Activity</h3>
             <div class="bullets">
-              <div><span class="dot"></span><span class="skeleton med" style="display:inline-block; width:52%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="display:inline-block; width:64%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="display:inline-block; width:36%"></span></div>
+              <div><span class="dot"></span><span class="skeleton med" style="width:52%"></span></div>
+              <div><span class="dot"></span><span class="skeleton med" style="width:64%"></span></div>
+              <div><span class="dot"></span><span class="skeleton med" style="width:36%"></span></div>
             </div>
           </div>
         </div>
@@ -187,7 +192,7 @@ body{
       <p>More in-depth statistics will be displayed here.</p>
     </section>
 
-    <!-- Discord Tab -->
+    <!-- Discord -->
     <section id="discord" class="tab-section">
       <h1>Connect Discord</h1>
       <div class="card" style="max-width:400px; margin-top:10px;">
@@ -216,7 +221,7 @@ navLinks.forEach(link => {
   });
 });
 
-// Placeholder for live stats
+// Load stats
 function loadStats(){
   const stats = document.getElementById('live-stats');
   stats.innerHTML = `
@@ -227,7 +232,7 @@ function loadStats(){
   `;
 }
 
-// Placeholder for player offers
+// Load player offers
 function loadPlayerOffers(){
   const offers = document.getElementById('player-offers');
   offers.innerHTML = `<div class="offer"><span>Example Player</span><span class="badge">Pending</span></div>`;
@@ -236,19 +241,19 @@ function loadPlayerOffers(){
 loadStats();
 loadPlayerOffers();
 
-// Discord OAuth2 login
+// Discord login
 async function loadDiscordUser(){
   try{
-    const res = await fetch('/auth/user');
+    const res = await fetch(`${BACKEND_URL}/auth/user`, { credentials:'include' });
     const user = await res.json();
     const linker = document.getElementById('discord-linker');
     linker.innerHTML = '';
     if(user.loggedIn){
       linker.innerHTML = `<button>${user.username}#${user.discriminator} - Logout</button>`;
-      linker.querySelector('button').onclick = () => window.location.href='/logout';
+      linker.querySelector('button').onclick = () => window.location.href = `${BACKEND_URL}/logout`;
     }else{
       linker.innerHTML = `<button>Login with Discord</button>`;
-      linker.querySelector('button').onclick = () => window.location.href='/auth/discord';
+      linker.querySelector('button').onclick = () => window.location.href = `${BACKEND_URL}/auth/discord`;
     }
   }catch(err){
     console.error(err);
