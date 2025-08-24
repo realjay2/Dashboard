@@ -2,7 +2,7 @@
   "discord": {
     "clientId": "1404284063317098527",
     "clientSecret": "8HVM7QWTp2gDBPdfJBXL06kQcqCZVCsX",
-    "redirectUri": "http://localhost:3000/auth/discord/callback"
+    "redirectUri": "https://hybrid-dash.vercel.app/auth/discord/callback"
   },
   "server": {
     "port": 3000,
