@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Dashboard</title>
+<title>Hybrid Dash</title>
 <link rel="icon" href="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" type="image/webp">
 <style>
 :root{
@@ -20,6 +20,12 @@
   --danger:#ef4444;
   --shadow:0 6px 20px rgba(0,0,0,.35) inset, 0 0 0 1px rgba(255,255,255,.03) inset;
 }
+
+/* Disable text selection */
+body, * {
+  user-select: none;
+}
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -28,13 +34,17 @@ body{
   color:var(--text);
   font:500 16px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
   letter-spacing:.2px;
+  cursor:none; /* Hide default cursor */
 }
+
 .app{display:grid; grid-template-columns:260px 1fr; min-height:100vh}
 .sidebar{
   background:linear-gradient(180deg, #111a25 0%, #0d141c 100%);
-  padding:18px 14px; position:sticky; top:0; height:100vh; border-right:1px solid rgba(255,255,255,.04);
+  padding:18px 14px; position:sticky; top:0; height:100vh; border-right:1px solid rgba(255,255,255,.04); position:relative;
 }
-.brand{font-weight:800; letter-spacing:1px; margin:6px 10px 18px; font-size:22px; opacity:.95}
+.brand{font-weight:800; letter-spacing:1px; margin:6px 10px 18px; font-size:22px; opacity:.95; display:flex; align-items:center;}
+.brand img{width:28px; height:28px; margin-right:8px; vertical-align:middle;}
+
 .nav{display:flex; flex-direction:column; gap:10px; margin-top:6px}
 .nav a{
   text-decoration:none; color:var(--text); opacity:.9;
@@ -66,6 +76,7 @@ body{
 .btn.secondary{background:linear-gradient(180deg, #2e3c51, #2a3447)}
 .btn + .btn{margin-top:14px}
 .btn .rowi{display:inline-flex; align-items:center; gap:10px; justify-content:center}
+.btn:hover { cursor: default; } /* cursor hidden on hover */
 
 .offer{display:flex; align-items:center; justify-content:space-between; padding:10px 12px; border-radius:10px; background:rgba(255,255,255,.04); margin-top:10px}
 .badge{font-size:12px; padding:6px 10px; border-radius:999px; background:rgba(59,130,246,.18); color:#cfe1ff; border:1px solid rgba(59,130,246,.35)}
@@ -93,29 +104,78 @@ body{
   .app{grid-template-columns: 1fr}
   .sidebar{position:relative; height:auto; border-right:0}
 }
+
+/* Join Discord button */
+.join-discord {
+  position: absolute;
+  bottom:20px;
+  left:14px;
+  width:calc(100% - 28px);
+  padding:12px;
+  text-align:center;
+  background: linear-gradient(180deg, #7289da 0%, #5b6eae 100%);
+  border-radius:10px;
+  color:white;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 6px 12px rgba(0,0,0,.3);
+  text-decoration:none;
+}
+.join-discord:hover {
+  background: linear-gradient(180deg, #5b6eae 0%, #7289da 100%);
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  top:0; left:0;
+  width:100%; height:100%;
+  background:rgba(0,0,0,0.6);
+  display:none;
+  align-items:center; justify-content:center;
+  z-index:9999;
+}
+.modal-backdrop.active { display:flex; }
+.modal {
+  background:var(--panel);
+  padding:24px;
+  border-radius:14px;
+  max-width:400px;
+  width:90%;
+  position:relative;
+  box-shadow:0 6px 18px rgba(0,0,0,.5);
+}
+.modal h2 { margin-top:0; }
+.modal .close-btn {
+  position:absolute;
+  top:12px; right:12px;
+  background:none;
+  border:none;
+  color:var(--text);
+  font-size:20px;
+  cursor:pointer;
+}
 </style>
 </head>
 <body>
 <script>
-// Configure your backend URL here:
-const BACKEND_URL = 'https://your-backend-domain.com'; // <-- REPLACE with your backend URL
+const BACKEND_URL = 'https://your-backend-domain.com';
 </script>
 
 <div class="app">
   <aside class="sidebar">
-<div class="brand">
-  <img src="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" 
-       alt="Hybrid Logo" 
-       style="width:28px; height:28px; vertical-align:middle; margin-right:8px;"/>
-  Hybrid Dash
-</div>
+    <div class="brand">
+      <img src="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" alt="Hybrid Logo"/>
+      Hybrid Dash
+    </div>
     <nav class="nav">
-      <a class="active" data-tab="home"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3l9 8h-3v9h-5v-6H11v6H6v-9H3z"/></svg><span>Home</span></a>
-      <a data-tab="roster"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 110-10 5 5 0 010 10zm-9 9a9 9 0 1118 0H3z"/></svg><span>Roster</span></a>
-      <a data-tab="teams"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 6h18v4H3V6zm0 6h18v6H3v-6z"/></svg><span>Teams</span></a>
-      <a data-tab="stats"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 19h16v2H4v-2zM5 3h2v12H5V3zm6 4h2v8h-2V7zm6 6h2v2h-2v-2z"/></svg><span>Stats</span></a>
-      <a data-tab="discord"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg><span>Discord</span></a>
+      <a class="active" data-tab="home">Home</a>
+      <a data-tab="roster">Roster</a>
+      <a data-tab="teams">Teams</a>
+      <a data-tab="stats">Stats</a>
+      <a data-tab="discord">Discord</a>
     </nav>
+    <a href="https://discord.gg/kv2KQKAXAp" target="_blank" class="join-discord">Join Discord</a>
   </aside>
 
   <main class="main">
@@ -133,45 +193,12 @@ const BACKEND_URL = 'https://your-backend-domain.com'; // <-- REPLACE with your 
             <div class="skeleton med"></div>
             <div class="skeleton short"></div>
           </div>
-
           <div class="card">
             <h3>Manage Team</h3>
             <div class="muted" style="margin-bottom:14px">Add or remove players from your roster</div>
-            <button class="btn"><span class="rowi">Add Player</span></button>
-            <button class="btn secondary"><span class="rowi">Remove Player</span></button>
+            <button class="btn add-player"><span class="rowi">Add Player</span></button>
+            <button class="btn secondary remove-player"><span class="rowi">Remove Player</span></button>
           </div>
-        </div>
-
-        <div class="row">
-          <div class="card">
-            <h3>Activity</h3>
-            <div class="bullets">
-              <div><span class="dot"></span><span class="skeleton med" style="width:55%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="width:68%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="width:40%"></span></div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>Activity</h3>
-            <div class="bullets">
-              <div><span class="dot"></span><span class="skeleton med" style="width:52%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="width:64%"></span></div>
-              <div><span class="dot"></span><span class="skeleton med" style="width:36%"></span></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Player Offers</h3>
-          <div class="muted" style="margin-bottom:10px">Pending offers and negotiations</div>
-          <div id="player-offers"></div>
-        </div>
-
-        <div class="card" style="grid-column:3">
-          <h3>Quick Stats</h3>
-          <div class="muted">Team performance overview</div>
-          <div class="stats" id="live-stats"></div>
         </div>
       </section>
     </section>
@@ -197,83 +224,60 @@ const BACKEND_URL = 'https://your-backend-domain.com'; // <-- REPLACE with your 
     <!-- Discord -->
     <section id="discord" class="tab-section">
       <h1>Connect Discord</h1>
-      <div class="card" style="max-width:400px; margin-top:10px;">
-        <div class="discord-linker" id="discord-linker">
-          <button>Loading...</button>
-        </div>
+      <div class="discord-linker" id="discord-linker">
+        <button>Loading...</button>
       </div>
     </section>
   </main>
 </div>
 
+<!-- Modal -->
+<div class="modal-backdrop" id="player-modal">
+  <div class="modal">
+    <button class="close-btn" id="close-modal">&times;</button>
+    <h2>Player Action</h2>
+    <input type="text" id="player-username" placeholder="Enter Player Username" style="width:100%; padding:8px; margin-top:12px; border-radius:6px; border:none;"/>
+    <button class="btn" id="submit-player" style="margin-top:12px;">Confirm</button>
+  </div>
+</div>
+
+<!-- Custom Cursor -->
+<div id="cursor" style="position:fixed; top:0; left:0; width:18px; height:18px; border-radius:50%; background:#60a5fa; pointer-events:none; mix-blend-mode:lighten; box-shadow:0 0 12px #60a5fa,0 0 24px #60a5fa; transform:translate(-50%,-50%); z-index:99999;"></div>
+
 <script>
 // Sidebar tab switching
-const navLinks = document.querySelectorAll('.nav a');
-const tabs = document.querySelectorAll('.tab-section');
-navLinks.forEach(link => {
-  link.addEventListener('click', () => {
-    navLinks.forEach(l => l.classList.remove('active'));
+document.querySelectorAll('.nav a').forEach(link=>{
+  link.addEventListener('click',()=>{
+    document.querySelectorAll('.nav a').forEach(l=>l.classList.remove('active'));
     link.classList.add('active');
-    tabs.forEach(tab => {
-      tab.classList.remove('active');
-      if(tab.id === link.getAttribute('data-tab')){
-        tab.classList.add('active');
-      }
-    });
+    document.querySelectorAll('.tab-section').forEach(tab=>tab.classList.remove('active'));
+    document.getElementById(link.dataset.tab).classList.add('active');
   });
 });
 
-// Load stats
-function loadStats(){
-  const stats = document.getElementById('live-stats');
-  stats.innerHTML = `
-    <div class="stat"><span class="k">Games Played</span><span class="v">0</span></div>
-    <div class="stat"><span class="k">Wins</span><span class="v ok">0</span></div>
-    <div class="stat"><span class="k">Losses</span><span class="v bad">0</span></div>
-    <div class="stat"><span class="k">Win Rate</span><span class="v warn">0%</span></div>
-  `;
+// Custom cursor
+const cursor=document.getElementById('cursor');
+document.addEventListener('mousemove', e=>{
+  cursor.style.left=e.clientX+'px';
+  cursor.style.top=e.clientY+'px';
+});
+
+// Modal
+const modal=document.getElementById('player-modal');
+const input=document.getElementById('player-username');
+document.querySelector('.add-player').onclick = () => { modal.classList.add('active'); input.value=''; }
+document.querySelector('.remove-player').onclick = () => { modal.classList.add('active'); input.value=''; }
+document.getElementById('close-modal').onclick = () => { modal.classList.remove('active'); }
+document.getElementById('submit-player').onclick = () => {
+  alert(`Player username: ${input.value}`);
+  modal.classList.remove('active');
 }
 
-// Load player offers
-function loadPlayerOffers(){
-  const offers = document.getElementById('player-offers');
-  offers.innerHTML = `<div class="offer"><span>Example Player</span><span class="badge">Pending</span></div>`;
-}
-
-loadStats();
-loadPlayerOffers();
-
-// Discord login & display
-async function loadDiscordUser(){
-  try{
-    const res = await fetch(`${BACKEND_URL}/auth/user`, { credentials:'include' });
-    const user = await res.json();
-    const linker = document.getElementById('discord-linker');
-    linker.innerHTML = '';
-    if(user.loggedIn){
-      // User is logged in
-      linker.innerHTML = `
-        <div style="display:flex; align-items:center; gap:14px;">
-          <img src="${user.avatarURL}" style="width:50px; height:50px; border-radius:50%;"/>
-          <div>
-            <div style="font-weight:700;">${user.username}#${user.discriminator}</div>
-            <button id="logout-btn" style="margin-top:8px; padding:8px 12px; border:none; border-radius:8px; background:var(--primary); color:white; cursor:pointer;">Logout</button>
-          </div>
-        </div>
-      `;
-      document.getElementById('logout-btn').onclick = () => window.location.href = `${BACKEND_URL}/logout`;
-    }else{
-      // User not logged in
-      linker.innerHTML = `<button style="width:100%; padding:12px; border:none; border-radius:10px; background:var(--primary); color:white; font-weight:700; cursor:pointer;">Login with Discord</button>`;
-      linker.querySelector('button').onclick = () => window.location.href = `${BACKEND_URL}/auth/discord`;
-    }
-  }catch(err){
-    console.error(err);
-    document.getElementById('discord-linker').innerHTML = `<div style="color:red;">Failed to load Discord user</div>`;
-  }
-}
-
-loadDiscordUser();
+// Hide cursor on buttons
+document.querySelectorAll('button').forEach(btn=>{
+  btn.addEventListener('mouseenter',()=>cursor.style.display='none');
+  btn.addEventListener('mouseleave',()=>cursor.style.display='block');
+});
 </script>
 </body>
 </html>
