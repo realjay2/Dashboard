@@ -1,85 +1,67 @@
 const express = require('express');
+const axios = require('axios');
+const dotenv = require('dotenv');
 const session = require('express-session');
-const fetch = require('node-fetch');
-const fs = require('fs');
-const path = require('path');
 
-const config = JSON.parse(fs.readFileSync(path.join(__dirname, 'config.json')));
+dotenv.config();
 
 const app = express();
-const PORT = config.server.port || 3000;
+const port = 3000;
 
-app.use(express.json());
 app.use(session({
-  secret: config.server.sessionSecret,
+  secret: process.env.SESSION_SECRET,
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true,
 }));
 
-// Enable CORS for frontend
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  next();
+app.get('/auth/discord', (req, res) => {
+  const redirectUri = encodeURIComponent(process.env.DISCORD_REDIRECT_URI);
+  const oauthUrl = `https://discord.com/oauth2/authorize?client_id=${process.env.DISCORD_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=identify`;
+  res.redirect(oauthUrl);
 });
 
-// Discord OAuth2 login
-app.get('/login', (req, res) => {
-  const params = new URLSearchParams({
-    client_id: config.discord.clientId,
-    redirect_uri: config.discord.redirectUri,
-    response_type: 'code',
-    scope: 'identify email',
-    prompt: 'consent'
-  });
-  res.redirect(`https://discord.com/api/oauth2/authorize?${params.toString()}`);
-});
-
-// OAuth2 callback
 app.get('/auth/discord/callback', async (req, res) => {
-  const code = req.query.code;
-  if (!code) return res.send('No code provided');
+  const { code } = req.query;
 
-  const data = new URLSearchParams({
-    client_id: config.discord.clientId,
-    client_secret: config.discord.clientSecret,
-    grant_type: 'authorization_code',
-    code,
-    redirect_uri: config.discord.redirectUri,
-  });
+  if (!code) {
+    return res.status(400).send('Authorization code is missing.');
+  }
 
   try {
-    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {
-      method: 'POST',
-      body: data,
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    const response = await axios.post('https://discord.com/api/oauth2/token', new URLSearchParams({
+      client_id: process.env.DISCORD_CLIENT_ID,
+      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: process.env.DISCORD_REDIRECT_URI,
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
     });
-    const tokenJson = await tokenRes.json();
 
-    const userRes = await fetch('https://discord.com/api/users/@me', {
-      headers: { Authorization: `Bearer ${tokenJson.access_token}` },
+    const { access_token } = response.data;
+
+    const userResponse = await axios.get('https://discord.com/api/v10/users/@me', {
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
     });
-    const user = await userRes.json();
 
-    req.session.user = user;
-
-    // Redirect to frontend with session
-    res.redirect(`${config.discord.frontendUrl}?logged_in=true`);
-  } catch (err) {
-    console.error(err);
-    res.send('Error fetching Discord user');
+    req.session.user = userResponse.data;
+    res.redirect('/');
+  } catch (error) {
+    console.error('Error during OAuth2 callback:', error);
+    res.status(500).send('An error occurred during authentication.');
   }
 });
 
-// API to get user info
-app.get('/api/me', (req, res) => {
-  if (req.session.user) return res.json({ user: req.session.user });
-  res.status(401).json({ error: 'Not logged in' });
-});
-
-// Logout
 app.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.json({ ok: true });
+  req.session.destroy(() => {
+    res.redirect('/');
+  });
 });
 
-app.listen(PORT, () => console.log(`Backend running on http://localhost:${PORT}`));
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
