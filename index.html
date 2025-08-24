@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login / Register Dashboard</title>
+<style>
+:root{
+  --bg:#0e141b; --panel:#141c24; --panel-2:#111822; --muted:#8aa0b6;
+  --text:#e8f0fb; --primary:#3b82f6; --primary-2:#2563eb; --ok:#78e08f;
+  --warn:#fbbf24; --danger:#ef4444;
+}
+body{
+  margin:0; height:100vh; display:flex; justify-content:center; align-items:center;
+  background:var(--bg); color:var(--text); font:500 16px/1.4 ui-sans-serif, system-ui;
+}
+.card{
+  background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border-radius:14px; padding:30px; box-shadow:0 6px 20px rgba(0,0,0,.35);
+  width:100%; max-width:360px; box-sizing:border-box;
+}
+input, button{
+  width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; font-size:14px;
+  box-sizing:border-box;
+}
+button{
+  background:var(--primary); color:white; font-weight:700; cursor:pointer;
+}
+button.secondary{
+  background:transparent; color:var(--primary); font-weight:500; text-decoration:underline;
+  margin-top:4px;
+}
+h1{margin-bottom:20px; font-size:24px;}
+#msg{margin-top:8px; font-size:13px;}
+#password-strength{
+  height:6px; border-radius:4px; margin-top:-6px; margin-bottom:8px;
+  background:#555;
+}
+.str-weak{background:var(--danger);}
+.str-moderate{background:var(--warn);}
+.str-strong{background:var(--ok);}
+.str-invalid{color:var(--danger);}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div class="card" id="login-card">
+  <h1>Login</h1>
+  <input type="text" id="login-username" placeholder="Username or Email">
+  <input type="password" id="login-password" placeholder="Password">
+  <button id="login-btn">Login</button>
+  <button class="secondary" id="show-register-btn">Create Account</button>
+  <div id="login-msg" style="color:red;"></div>
+</div>
+
+<!-- Register -->
+<div class="card" id="register-card" style="display:none;">
+  <h1>Create Account</h1>
+  <input type="email" id="reg-email" placeholder="Email">
+  <div id="email-msg" style="font-size:13px; margin-top:-6px; margin-bottom:8px;"></div>
+  <input type="text" id="reg-username" placeholder="Username">
+  <input type="password" id="reg-password" placeholder="Password">
+  <div id="password-strength"></div>
+  <button id="register-btn">Register</button>
+  <button class="secondary" id="show-login-btn">Back to Login</button>
+  <div id="reg-msg" style="color:red;"></div>
+</div>
+
+<!-- Dashboard -->
+<div class="card" id="dashboard-card" style="display:none;">
+  <h1>Welcome, <span id="user-name"></span></h1>
+  <p>This is your dashboard.</p>
+  <button id="logout-btn">Logout</button>
+</div>
+
+<script>
+const BACKEND_URL = 'http://localhost:3000';
+
+// Switch forms
+document.getElementById('show-register-btn').onclick = () => {
+  document.getElementById('login-card').style.display='none';
+  document.getElementById('register-card').style.display='block';
+};
+document.getElementById('show-login-btn').onclick = () => {
+  document.getElementById('register-card').style.display='none';
+  document.getElementById('login-card').style.display='block';
+};
+
+// Email validation
+const emailInput = document.getElementById('reg-email');
+const emailMsg = document.getElementById('email-msg');
+emailInput.addEventListener('input', () => {
+  const val = emailInput.value;
+  const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+  if(!emailRegex.test(val)){
+    emailMsg.innerText = 'Invalid email address';
+    emailMsg.className = 'str-invalid';
+  } else emailMsg.innerText='';
+});
+
+// Password strength
+const passwordInput = document.getElementById('reg-password');
+const strengthDiv = document.getElementById('password-strength');
+passwordInput.addEventListener('input', () => {
+  const val = passwordInput.value;
+  if(val.length<6) strengthDiv.className='str-weak';
+  else if(/[A-Za-z]/.test(val)&&/\\d/.test(val)&&val.length<10) strengthDiv.className='str-moderate';
+  else if(/[A-Za-z]/.test(val)&&/\\d/.test(val)&&/[^A-Za-z0-9]/.test(val)&&val.length>=10) strengthDiv.className='str-strong';
+  else strengthDiv.className='str-moderate';
+});
+
+function showDashboard(user){
+  document.getElementById('login-card').style.display='none';
+  document.getElementById('register-card').style.display='none';
+  document.getElementById('dashboard-card').style.display='block';
+  document.getElementById('user-name').innerText = user.username;
+}
+
+// Login
+document.getElementById('login-btn').onclick = async () => {
+  const usernameOrEmail = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  try{
+    const res = await fetch(`${BACKEND_URL}/auth/login`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({usernameOrEmail,password}),
+      credentials:'include'
+    });
+    const data = await res.json();
+    if(data.success) showDashboard(data.user);
+    else document.getElementById('login-msg').innerText = data.message || "Invalid Email or Password";
+  } catch(err){ document.getElementById('login-msg').innerText = "Error. Try again."; }
+};
+
+// Register
+document.getElementById('register-btn').onclick = async () => {
+  const email = emailInput.value;
+  const username = document.getElementById('reg-username').value;
+  const password = passwordInput.value;
+  if(emailMsg.className==='str-invalid'){ document.getElementById('reg-msg').innerText='Invalid email'; return; }
+
+  const dupRes = await fetch(`${BACKEND_URL}/auth/check`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email,username}),
+  });
+  const dupData = await dupRes.json();
+  if(!dupData.available){ document.getElementById('reg-msg').innerText = dupData.message; return; }
+
+  const regRes = await fetch(`${BACKEND_URL}/auth/register`, {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({email,username,password}),
+    credentials:'include'
+  });
+  const regData = await regRes.json();
+  if(regData.success){
+    showDashboard(regData.user);
+  } else document.getElementById('reg-msg').innerText = regData.message;
+};
+
+// Logout
+document.getElementById('logout-btn').onclick = () => {
+  fetch(`${BACKEND_URL}/logout`,{credentials:'include'}).then(()=>{ 
+    document.getElementById('dashboard-card').style.display='none';
+    document.getElementById('login-card').style.display='block';
+  });
+};
+
+// Auto-login
+fetch(`${BACKEND_URL}/auth/user`, {credentials:'include'}).then(res=>res.json()).then(user=>{
+  if(user.loggedIn) showDashboard(user);
+});
+</script>
+</body>
+</html>
