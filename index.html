@@ -36,9 +36,13 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
 .tab-section.active{display:block}
 
 /* Sidebar User Box */
-#user-box{position:absolute;bottom:20px;left:14px;width:calc(100% - 28px);
-  background:rgba(255,255,255,0.05);padding:10px;border-radius:10px;
-  display:none;align-items:center;gap:10px;}
+#user-box{
+  position:absolute; bottom:80px; left:14px; 
+  width:calc(100% - 28px);
+  background:rgba(255,255,255,0.05);
+  padding:10px; border-radius:10px;
+  display:none; align-items:center; gap:10px;
+}
 #user-box img{width:32px;height:32px;border-radius:50%;}
 
 @media(max-width:1100px){
@@ -51,7 +55,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
 <div class="app">
   <!-- Sidebar -->
   <aside class="sidebar">
-    <div class="brand"><img src="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96"> Hybrid Dash</div>
+    <div class="brand"><img src="https://cdn.discordapp.com/emojis/1407882144281264270.webp?size=96" alt="logo"> Hybrid Dash</div>
     <nav class="nav">
       <a class="active" data-tab="home">Home</a>
       <a data-tab="roster">Roster</a>
@@ -61,7 +65,7 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
     </nav>
     <!-- User Box -->
     <div id="user-box">
-      <img id="user-pfp" src="" alt="pfp">
+      <img id="user-pfp" src="" alt="pfp" />
       <span id="user-name"></span>
     </div>
   </aside>
@@ -74,14 +78,10 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
         <h1>Welcome Back</h1>
         <div class="sub">Here's an overview of your league management dashboard, thanks for using Hybrid!</div>
       </header>
-
       <div class="card">
         <h3>What is Hybrid?</h3>
         <div class="muted feature-text">
-          <p>
-            Boost your Roblox league with <strong>Hybrid</strong> – the all-in-one Discord bot built for advanced utilities,
-            fast performance, and nonstop reliability.
-          </p>
+          <p>Boost your Roblox league with <strong>Hybrid</strong> – the all-in-one Discord bot built for advanced utilities, fast performance, and nonstop reliability.</p>
           <ul class="feature-list">
             <li>🏆 League Management – Automate rosters, schedules, and roles</li>
             <li>📊 Statistics & Tracking – Track performance and standings</li>
@@ -96,12 +96,18 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
 
     <!-- Roster -->
     <section id="roster" class="tab-section">
-      <div class="card"><h3>Roster</h3><p>Your roster will load once you link your account.</p></div>
+      <div class="card" id="roster-card">
+        <h3>Roster</h3>
+        <div id="roster-content">Your roster will load once you link your account.</div>
+      </div>
     </section>
 
     <!-- Stats -->
     <section id="stats" class="tab-section">
-      <div class="card"><h3>Stats</h3><p>Stats will appear once you connect Discord.</p></div>
+      <div class="card" id="stats-card">
+        <h3>Stats</h3>
+        <div id="stats-content">Stats will appear once you connect Discord.</div>
+      </div>
     </section>
 
     <!-- Store -->
@@ -114,10 +120,11 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
 
     <!-- Discord -->
     <section id="discord" class="tab-section">
-      <div class="card">
+      <div class="card" id="discord-card">
         <h3>Connect Your Discord</h3>
-        <p class="muted">Login with Discord to personalize your dashboard.</p>
+        <p class="muted" id="discord-invite-text">Login with Discord to personalize your dashboard.</p>
         <a id="discord-login" class="btn">Login with Discord</a>
+        <a id="discord-invite" class="btn" href="https://discord.gg/kv2KQKAXAp" target="_blank" style="display:none;margin-top:12px;">Join Our Discord Server</a>
       </div>
     </section>
   </main>
@@ -127,13 +134,14 @@ html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:500 1
 <div id="cursor" style="position:fixed;top:0;left:0;width:16px;height:16px;border-radius:50%;background:#60a5fa;pointer-events:none;box-shadow:0 0 8px #60a5fa;transform:translate(-50%,-50%);z-index:9999;"></div>
 
 <script>
-// Cursor
+// Cursor movement
 const cursor=document.getElementById('cursor');
 document.addEventListener('mousemove', e=>{
-  cursor.style.left=e.clientX+'px'; cursor.style.top=e.clientY+'px';
+  cursor.style.left=e.clientX+'px';
+  cursor.style.top=e.clientY+'px';
 });
 
-// Tabs
+// Sidebar tab switching
 document.querySelectorAll('.nav a').forEach(link=>{
   link.addEventListener('click',()=>{
     document.querySelectorAll('.nav a').forEach(l=>l.classList.remove('active'));
@@ -144,34 +152,83 @@ document.querySelectorAll('.nav a').forEach(link=>{
 });
 
 // OAuth2
-const CLIENT_ID = "1408648361548185643"; // insert your client ID
+const CLIENT_ID = "1408648361548185643"; // Your Discord Client ID
 const REDIRECT_URI = window.location.origin + window.location.pathname;
 const OAUTH_URL = `https://discord.com/oauth2/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=identify`;
+
+// Mock data - replace with real API calls to get user-specific info
+const mockUserData = {
+  rosters: [
+    {team: "Dragon Slayers", role: "Player"},
+    {team: "Phoenix Flyers", role: "Head Coach"}
+  ],
+  stats: {
+    gamesPlayed: 42,
+    wins: 30,
+    losses: 12,
+    rank: "Gold III"
+  }
+};
 
 document.getElementById("discord-login").addEventListener("click", () => {
   window.location.href = OAUTH_URL;
 });
 
-// If redirected back with token
-if(window.location.hash.includes("access_token")){
-  const params = new URLSearchParams(window.location.hash.replace("#","?"));
+// Function to update Roster tab content
+function updateRosterContent(user) {
+  const rosterDiv = document.getElementById("roster-content");
+  rosterDiv.innerHTML = "";
+  if(mockUserData.rosters && mockUserData.rosters.length > 0) {
+    mockUserData.rosters.forEach(r => {
+      const div = document.createElement("div");
+      div.innerHTML = `<strong>Team:</strong> ${r.team} <br> <strong>Role:</strong> ${r.role}`;
+      div.style.marginBottom = "12px";
+      rosterDiv.appendChild(div);
+    });
+  } else {
+    rosterDiv.textContent = "You are not assigned to any roster.";
+  }
+}
+
+// Function to update Stats tab content
+function updateStatsContent(user) {
+  const statsDiv = document.getElementById("stats-content");
+  if(mockUserData.stats){
+    statsDiv.innerHTML = 
+      `<p><strong>Games Played:</strong> ${mockUserData.stats.gamesPlayed}</p>
+       <p><strong>Wins:</strong> ${mockUserData.stats.wins}</p>
+       <p><strong>Losses:</strong> ${mockUserData.stats.losses}</p>
+       <p><strong>Rank:</strong> ${mockUserData.stats.rank}</p>`;
+  } else {
+    statsDiv.textContent = "No stats available.";
+  }
+}
+
+// OAuth2 login flow and fetching user info
+if(window.location.hash.includes("access_token")) {
+  const params = new URLSearchParams(window.location.hash.replace("#", "?"));
   const token = params.get("access_token");
 
   fetch("https://discord.com/api/users/@me", {
-    headers: {Authorization:`Bearer ${token}`}
+    headers: {Authorization: `Bearer ${token}`}
   })
-  .then(res=>res.json())
-  .then(user=>{
-    // PFP
+  .then(res => res.json())
+  .then(user => {
+    // Show sidebar user box
     document.getElementById("user-pfp").src = user.avatar 
       ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
       : `https://cdn.discordapp.com/embed/avatars/0.png`;
-    // Name
     document.getElementById("user-name").textContent = user.username;
-    // Show box
-    document.getElementById("user-box").style.display="flex";
-    // Hide login
-    document.getElementById("discord-login").style.display="none";
+    document.getElementById("user-box").style.display = "flex";
+
+    // Hide login button, show Discord invite in Discord tab
+    document.getElementById("discord-login").style.display = "none";
+    document.getElementById("discord-invite").style.display = "inline-block";
+    document.getElementById("discord-invite-text").textContent = "Thank you for connecting! Join our Discord for support and updates.";
+
+    // Update roster and stats tabs
+    updateRosterContent(user);
+    updateStatsContent(user);
   });
 }
 </script>
